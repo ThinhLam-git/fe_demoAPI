@@ -33,7 +33,7 @@
             formData.append('file', file);
 
             try{
-                const response = await fetch('http://127.0.0.1:5000/run_clustering', {
+                const response = await fetch('https://be-webdm.onrender.com/run_clustering', {
                     method: 'POST',
                     body: formData
                 });
@@ -72,7 +72,7 @@
             formData.append('file', file);
 
             try{
-                const response = await fetch('http://127.0.0.1:5000/run_decision_tree', {
+                const response = await fetch('https://be-webdm.onrender.com/run_decision_tree', {
                     method: 'POST',
                     body: formData
                 });
