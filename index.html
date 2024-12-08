@@ -106,6 +106,93 @@
     <div id="Result"></div>
 
     <script>
+      // Clustering button event listener
+      document
+        .getElementById("clusteringButton")
+        .addEventListener("click", async (event) => {
+          event.preventDefault(); // Prevent form submission
+
+          const fileInput = document.getElementById("csvFile");
+          const file = fileInput.files[0];
+
+          if (!file) {
+            alert("Please upload a .csv file");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("file", file);
+
+          try {
+            const response = await fetch(
+              "https://be-webdm.onrender.com/run_clustering",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              document.getElementById("Result").innerHTML = `
+                        <h2>Clustering Result</h2>
+                        <p>Number of Clusters: ${data.n_clusters}</p>
+                        <p>Cluster Assignments: ${data.clusters.join(", ")}</p>
+                        <p>Cluster Centers: ${JSON.stringify(
+                          data.cluster_centers
+                        )}</p>`;
+            } else {
+              const error = await response.json();
+              alert(`Error: ${error.error}`);
+            }
+          } catch (error) {
+            console.error("Fetch error:", error);
+            alert("Failed to connect to the server!");
+          }
+        });
+
+      // Decision Tree button event listener
+      document
+        .getElementById("decisionTreeButton")
+        .addEventListener("click", async (event) => {
+          event.preventDefault(); // Prevent form submission
+
+          const fileInput = document.getElementById("csvFile");
+          const file = fileInput.files[0];
+
+          if (!file) {
+            alert("Please upload a .csv file");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("file", file);
+
+          try {
+            const response = await fetch(
+              "https://be-webdm.onrender.com/run_decision_tree",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              document.getElementById("Result").innerHTML = `
+                        <h2>Decision Tree Result</h2>
+                        <p>Accuracy: ${data.accuracy}</p>
+                        <pre>Tree Structure:\n${data.tree_structure}</pre>`;
+            } else {
+              const error = await response.json();
+              alert(`Error: ${error.error}`);
+            }
+          } catch (error) {
+            console.error("Fetch error:", error);
+            alert("Failed to connect to the server!");
+          }
+        });
+
       // Naive Bayes (No Smoothing) button event listener
       document
         .getElementById("naiveBayesNoSmoothButton")
