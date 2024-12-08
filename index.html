@@ -1,98 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Data Mining Algorithm Result</title>
-</head>
-<body>
-    <h1>Upload Dataset for Decision Tree</h1>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Upload Dataset for Machine Learning Algorithms</h1>
 
     <form id="uploadForm">
-        <input type="file" id="csvFile" accept=".csv" required>
-        <button type="button" id="clusteringButton">Run Clustering</button> <!-- Changed to type="button" -->
-        <button type="button" id="decisionTreeButton">Run Decision Tree</button> <!-- Changed to type="button" -->
+      <input type="file" id="csvFile" accept=".csv" required />
+      <button type="button" id="clusteringButton">Run Clustering</button>
+      <button type="button" id="decisionTreeButton">Run Decision Tree</button>
+      <button type="button" id="naiveBayesNoSmoothButton">
+        Naive Bayes (No Smoothing)
+      </button>
+      <button type="button" id="naiveBayesWithSmoothButton">
+        Naive Bayes (With Laplace Smoothing)
+      </button>
     </form>
 
     <div id="Result"></div>
 
     <script>
-        // Clustering button event listener
-        document.getElementById('clusteringButton').addEventListener('click', async (event) => {
-            event.preventDefault(); // Prevent form submission
+      // Naive Bayes (No Smoothing) button event listener
+      document
+        .getElementById("naiveBayesNoSmoothButton")
+        .addEventListener("click", async (event) => {
+          event.preventDefault();
 
-            const fileInput = document.getElementById('csvFile');
-            const file = fileInput.files[0];
+          const fileInput = document.getElementById("csvFile");
+          const file = fileInput.files[0];
 
-            if(!file){
-                alert('Please upload a .csv file');
-                return;
-            }
+          if (!file) {
+            alert("Please upload a .csv file");
+            return;
+          }
 
-            const formData = new FormData();
-            formData.append('file', file);
+          const formData = new FormData();
+          formData.append("file", file);
 
-            try{
-                const response = await fetch('https://be-webdm.onrender.com/run_clustering', {
-                    method: 'POST',
-                    body: formData
-                });
+          try {
+            const response = await fetch(
+              "https://be-webdm.onrender.com/naive_bayes_no_smoothing",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
 
-                if(response.ok){
-                    const data = await response.json();
-                    document.getElementById('Result').innerHTML = `
-                        <h2>Clustering Result</h2>
-                        <p>Number of Clusters: ${data.n_clusters}</p>
-                        <p>Cluster Assignments: ${data.clusters.join(', ')}</p>
-                        <p>Cluster Centers: ${JSON.stringify(data.cluster_centers)}</p>
+            if (response.ok) {
+              const data = await response.json();
+
+              // Generate class metrics table
+              let classMetricsHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                    <th>F1-Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     `;
-                } else {
-                    const error = await response.json();
-                    alert(`Error: ${error.error}`);
-                }
-            } catch (error) {
-                console.error('Fetch error:', error);
-                alert('Failed to connect to the server!');
-            }        
+
+              Object.keys(data.class_metrics).forEach((cls) => {
+                const metrics = data.class_metrics[cls];
+                classMetricsHtml += `
+                            <tr>
+                                <td>${cls}</td>
+                                <td>${(metrics.precision * 100).toFixed(
+                                  2
+                                )}%</td>
+                                <td>${(metrics.recall * 100).toFixed(2)}%</td>
+                                <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
+                            </tr>
+                        `;
+              });
+
+              classMetricsHtml += `</tbody></table>`;
+
+              // Generate confusion matrix table
+              let confusionMatrixHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Actual / Predicted</th>
+                                    ${data.classes
+                                      .map((cls) => `<th>${cls}</th>`)
+                                      .join("")}
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+              data.confusion_matrix.forEach((row, index) => {
+                confusionMatrixHtml += `
+                            <tr>
+                                <td>${data.classes[index]}</td>
+                                ${row.map((val) => `<td>${val}</td>`).join("")}
+                            </tr>
+                        `;
+              });
+
+              confusionMatrixHtml += `</tbody></table>`;
+
+              document.getElementById("Result").innerHTML = `
+                        <h2>Naive Bayes (No Smoothing) Results</h2>
+                        <p>Overall Accuracy: ${(data.accuracy * 100).toFixed(
+                          2
+                        )}%</p>
+                        
+                        <h3>Confusion Matrix</h3>
+                        ${confusionMatrixHtml}
+                        
+                        <h3>Class-wise Metrics</h3>
+                        ${classMetricsHtml}
+                    `;
+            } else {
+              const error = await response.json();
+              alert(`Error: ${error.error}`);
+            }
+          } catch (error) {
+            console.error("Fetch error:", error);
+            alert("Failed to connect to the server!");
+          }
         });
 
-        // Decision Tree button event listener
-        document.getElementById('decisionTreeButton').addEventListener('click', async (event) => {
-            event.preventDefault(); // Prevent form submission
+      // Naive Bayes (With Smoothing) button event listener
+      document
+        .getElementById("naiveBayesWithSmoothButton")
+        .addEventListener("click", async (event) => {
+          event.preventDefault();
 
-            const fileInput = document.getElementById('csvFile');
-            const file = fileInput.files[0];
+          const fileInput = document.getElementById("csvFile");
+          const file = fileInput.files[0];
 
-            if(!file){
-                alert('Please upload a .csv file');
-                return;
-            }
+          if (!file) {
+            alert("Please upload a .csv file");
+            return;
+          }
 
-            const formData = new FormData();
-            formData.append('file', file);
+          const formData = new FormData();
+          formData.append("file", file);
 
-            try{
-                const response = await fetch('https://be-webdm.onrender.com/run_decision_tree', {
-                    method: 'POST',
-                    body: formData
-                });
+          try {
+            const response = await fetch(
+              "https://be-webdm.onrender.com/naive_bayes_with_smoothing",
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
 
-                if(response.ok){
-                    const data = await response.json();
-                    document.getElementById('Result').innerHTML = `
-                        <h2>Decision Tree Result</h2>
-                        <p>Accuracy: ${data.accuracy}</p>
-                        <pre>Tree Structure:\n${data.tree_structure}</pre>
+            if (response.ok) {
+              const data = await response.json();
+
+              // Generate class metrics table
+              let classMetricsHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                    <th>F1-Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     `;
-                } else {
-                    const error = await response.json();
-                    alert(`Error: ${error.error}`);
-                }
-            } catch (error) {
-                console.error('Fetch error:', error);
-                alert('Failed to connect to the server!');
+
+              Object.keys(data.class_metrics).forEach((cls) => {
+                const metrics = data.class_metrics[cls];
+                classMetricsHtml += `
+                            <tr>
+                                <td>${cls}</td>
+                                <td>${(metrics.precision * 100).toFixed(
+                                  2
+                                )}%</td>
+                                <td>${(metrics.recall * 100).toFixed(2)}%</td>
+                                <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
+                            </tr>
+                        `;
+              });
+
+              classMetricsHtml += `</tbody></table>`;
+
+              // Generate confusion matrix table
+              let confusionMatrixHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Actual / Predicted</th>
+                                    ${data.classes
+                                      .map((cls) => `<th>${cls}</th>`)
+                                      .join("")}
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+              data.confusion_matrix.forEach((row, index) => {
+                confusionMatrixHtml += `
+                            <tr>
+                                <td>${data.classes[index]}</td>
+                                ${row.map((val) => `<td>${val}</td>`).join("")}
+                            </tr>
+                        `;
+              });
+
+              confusionMatrixHtml += `</tbody></table>`;
+
+              document.getElementById("Result").innerHTML = `
+                        <h2>Naive Bayes (With Laplace Smoothing) Results</h2>
+                        <p>Overall Accuracy: ${(data.accuracy * 100).toFixed(
+                          2
+                        )}%</p>
+                        
+                        <h3>Confusion Matrix</h3>
+                        ${confusionMatrixHtml}
+                        
+                        <h3>Class-wise Metrics</h3>
+                        ${classMetricsHtml}
+                    `;
+            } else {
+              const error = await response.json();
+              alert(`Error: ${error.error}`);
             }
+          } catch (error) {
+            console.error("Fetch error:", error);
+            alert("Failed to connect to the server!");
+          }
         });
     </script>
-</body>
+  </body>
 </html>
