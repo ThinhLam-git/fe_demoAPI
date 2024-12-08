@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Mining Algorithm Result</title>
+</head>
+<body>
+    <h1>Upload Dataset for Decision Tree</h1>
+
+    <form id="uploadForm">
+        <input type="file" id="csvFile" accept=".csv" required>
+        <button type="button" id="clusteringButton">Run Clustering</button> <!-- Changed to type="button" -->
+        <button type="button" id="decisionTreeButton">Run Decision Tree</button> <!-- Changed to type="button" -->
+    </form>
+
+    <div id="Result"></div>
+
+    <script>
+        // Clustering button event listener
+        document.getElementById('clusteringButton').addEventListener('click', async (event) => {
+            event.preventDefault(); // Prevent form submission
+
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if(!file){
+                alert('Please upload a .csv file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try{
+                const response = await fetch('http://127.0.0.1:5000/run_clustering', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if(response.ok){
+                    const data = await response.json();
+                    document.getElementById('Result').innerHTML = `
+                        <h2>Clustering Result</h2>
+                        <p>Number of Clusters: ${data.n_clusters}</p>
+                        <p>Cluster Assignments: ${data.clusters.join(', ')}</p>
+                        <p>Cluster Centers: ${JSON.stringify(data.cluster_centers)}</p>
+                    `;
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.error}`);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('Failed to connect to the server!');
+            }        
+        });
+
+        // Decision Tree button event listener
+        document.getElementById('decisionTreeButton').addEventListener('click', async (event) => {
+            event.preventDefault(); // Prevent form submission
+
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if(!file){
+                alert('Please upload a .csv file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try{
+                const response = await fetch('http://127.0.0.1:5000/run_decision_tree', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if(response.ok){
+                    const data = await response.json();
+                    document.getElementById('Result').innerHTML = `
+                        <h2>Decision Tree Result</h2>
+                        <p>Accuracy: ${data.accuracy}</p>
+                        <pre>Tree Structure:\n${data.tree_structure}</pre>
+                    `;
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.error}`);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('Failed to connect to the server!');
+            }
+        });
+    </script>
+</body>
+</html>
