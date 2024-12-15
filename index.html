@@ -136,17 +136,30 @@
             if (response.ok) {
               const data = await response.json();
               // Xử lý và hiển thị các cụm
-              const clustersHtml = Object.entries(data.clusters).map(
-                        ([clusterId, points]) => `<li><strong>Cụm ${clusterId}:</strong> [${points.join(', ')}]</li>`
-                    ).join('');
+              const clustersHtml = Object.entries(data.clusters)
+                .map(
+                  ([clusterId, points]) =>
+                    `<li><strong>Cụm ${clusterId}:</strong> [${points.join(
+                      ", "
+                    )}]</li>`
+                )
+                .join("");
 
-                    // Hiển thị kết quả
-                    document.getElementById('Result').innerHTML = `
+              // Hiển thị kết quả
+              document.getElementById("Result").innerHTML = `
                         <h2>Clustering Result</h2>
-                        <p><b>Phân cụm ban đầu:</b> ${data.initial_labels.join(', ')}</p>
-                        <p><b>Trọng tâm ban đầu:</b> ${data.initial_centroids.map(c => `[${c.join(', ')}]`).join(', ')}</p>
-                        <p><b>Trọng tâm cuối cùng:</b> ${data.centroids.map(c => `[${c.join(', ')}]`).join(', ')}</p>
-                        <p><b>Kết quả phân cụm:</b> ${data.final_labels.join(', ')}</p>
+                        <p><b>Phân cụm ban đầu:</b> ${data.initial_labels.join(
+                          ", "
+                        )}</p>
+                        <p><b>Trọng tâm ban đầu:</b> ${data.initial_centroids
+                          .map((c) => `[${c.join(", ")}]`)
+                          .join(", ")}</p>
+                        <p><b>Trọng tâm cuối cùng:</b> ${data.centroids
+                          .map((c) => `[${c.join(", ")}]`)
+                          .join(", ")}</p>
+                        <p><b>Kết quả phân cụm:</b> ${data.final_labels.join(
+                          ", "
+                        )}</p>
                         <h3>Phân cụm:</h3>
                         <ul>${clustersHtml}</ul>
                     `;
@@ -202,7 +215,6 @@
           }
         });
 
-      // Naive Bayes (No Smoothing) button event listener
       document
         .getElementById("naiveBayesNoSmoothButton")
         .addEventListener("click", async (event) => {
@@ -231,73 +243,76 @@
             if (response.ok) {
               const data = await response.json();
 
-              // Generate class metrics table
-              let classMetricsHtml = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Class</th>
-                                    <th>Precision</th>
-                                    <th>Recall</th>
-                                    <th>F1-Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
+              // Generate detailed results HTML
+              let resultsHtml = `
+          <h2>Naive Bayes (No Smoothing) Results</h2>
+          
+          <h3>Overall Performance</h3>
+          <p>Overall Accuracy: ${(data.accuracy * 100).toFixed(2)}%</p>
+          
+          <h3>Confusion Matrix</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Actual / Predicted</th>
+                ${data.classes.map((cls) => `<th>${cls}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.confusion_matrix
+                .map(
+                  (row, index) => `
+                <tr>
+                  <td>${data.classes[index]}</td>
+                  ${row.map((val) => `<td>${val}</td>`).join("")}
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          
+          <h3>Class-wise Metrics</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.keys(data.class_metrics)
+                .map((cls) => {
+                  const metrics = data.class_metrics[cls];
+                  return `
+                  <tr>
+                    <td>${cls}</td>
+                    <td>${(metrics.precision * 100).toFixed(2)}%</td>
+                    <td>${(metrics.recall * 100).toFixed(2)}%</td>
+                    <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
+                  </tr>
+                `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+          
+          <h3>Additional Details</h3>
+          <details>
+            <summary>Fit Details</summary>
+            <pre>${JSON.stringify(data.fit_details, null, 2)}</pre>
+          </details>
+          
+          <details>
+            <summary>Predict Details</summary>
+            <pre>${JSON.stringify(data.predict_details, null, 2)}</pre>
+          </details>
+        `;
 
-              Object.keys(data.class_metrics).forEach((cls) => {
-                const metrics = data.class_metrics[cls];
-                classMetricsHtml += `
-                            <tr>
-                                <td>${cls}</td>
-                                <td>${(metrics.precision * 100).toFixed(
-                                  2
-                                )}%</td>
-                                <td>${(metrics.recall * 100).toFixed(2)}%</td>
-                                <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
-                            </tr>
-                        `;
-              });
-
-              classMetricsHtml += `</tbody></table>`;
-
-              // Generate confusion matrix table
-              let confusionMatrixHtml = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Actual / Predicted</th>
-                                    ${data.classes
-                                      .map((cls) => `<th>${cls}</th>`)
-                                      .join("")}
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
-              data.confusion_matrix.forEach((row, index) => {
-                confusionMatrixHtml += `
-                            <tr>
-                                <td>${data.classes[index]}</td>
-                                ${row.map((val) => `<td>${val}</td>`).join("")}
-                            </tr>
-                        `;
-              });
-
-              confusionMatrixHtml += `</tbody></table>`;
-
-              document.getElementById("Result").innerHTML = `
-                        <h2>Naive Bayes (No Smoothing) Results</h2>
-                        <p>Overall Accuracy: ${(data.accuracy * 100).toFixed(
-                          2
-                        )}%</p>
-                        
-                        <h3>Confusion Matrix</h3>
-                        ${confusionMatrixHtml}
-                        
-                        <h3>Class-wise Metrics</h3>
-                        ${classMetricsHtml}
-                    `;
+              // Display the results
+              document.getElementById("Result").innerHTML = resultsHtml;
             } else {
               const error = await response.json();
               alert(`Error: ${error.error}`);
@@ -337,73 +352,76 @@
             if (response.ok) {
               const data = await response.json();
 
-              // Generate class metrics table
-              let classMetricsHtml = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Class</th>
-                                    <th>Precision</th>
-                                    <th>Recall</th>
-                                    <th>F1-Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
+              // Generate detailed results HTML
+              let resultsHtml = `
+          <h2>Naive Bayes (No Smoothing) Results</h2>
+          
+          <h3>Overall Performance</h3>
+          <p>Overall Accuracy: ${(data.accuracy * 100).toFixed(2)}%</p>
+          
+          <h3>Confusion Matrix</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Actual / Predicted</th>
+                ${data.classes.map((cls) => `<th>${cls}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.confusion_matrix
+                .map(
+                  (row, index) => `
+                <tr>
+                  <td>${data.classes[index]}</td>
+                  ${row.map((val) => `<td>${val}</td>`).join("")}
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          
+          <h3>Class-wise Metrics</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.keys(data.class_metrics)
+                .map((cls) => {
+                  const metrics = data.class_metrics[cls];
+                  return `
+                  <tr>
+                    <td>${cls}</td>
+                    <td>${(metrics.precision * 100).toFixed(2)}%</td>
+                    <td>${(metrics.recall * 100).toFixed(2)}%</td>
+                    <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
+                  </tr>
+                `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+          
+          <h3>Additional Details</h3>
+          <details>
+            <summary>Fit Details</summary>
+            <pre>${JSON.stringify(data.fit_details, null, 2)}</pre>
+          </details>
+          
+          <details>
+            <summary>Predict Details</summary>
+            <pre>${JSON.stringify(data.predict_details, null, 2)}</pre>
+          </details>
+          `;
 
-              Object.keys(data.class_metrics).forEach((cls) => {
-                const metrics = data.class_metrics[cls];
-                classMetricsHtml += `
-                            <tr>
-                                <td>${cls}</td>
-                                <td>${(metrics.precision * 100).toFixed(
-                                  2
-                                )}%</td>
-                                <td>${(metrics.recall * 100).toFixed(2)}%</td>
-                                <td>${(metrics.f1_score * 100).toFixed(2)}%</td>
-                            </tr>
-                        `;
-              });
-
-              classMetricsHtml += `</tbody></table>`;
-
-              // Generate confusion matrix table
-              let confusionMatrixHtml = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Actual / Predicted</th>
-                                    ${data.classes
-                                      .map((cls) => `<th>${cls}</th>`)
-                                      .join("")}
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
-              data.confusion_matrix.forEach((row, index) => {
-                confusionMatrixHtml += `
-                            <tr>
-                                <td>${data.classes[index]}</td>
-                                ${row.map((val) => `<td>${val}</td>`).join("")}
-                            </tr>
-                        `;
-              });
-
-              confusionMatrixHtml += `</tbody></table>`;
-
-              document.getElementById("Result").innerHTML = `
-                        <h2>Naive Bayes (With Laplace Smoothing) Results</h2>
-                        <p>Overall Accuracy: ${(data.accuracy * 100).toFixed(
-                          2
-                        )}%</p>
-                        
-                        <h3>Confusion Matrix</h3>
-                        ${confusionMatrixHtml}
-                        
-                        <h3>Class-wise Metrics</h3>
-                        ${classMetricsHtml}
-                    `;
+              // Display the results
+              document.getElementById("Result").innerHTML = resultsHtml;
             } else {
               const error = await response.json();
               alert(`Error: ${error.error}`);
