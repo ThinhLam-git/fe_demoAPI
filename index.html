@@ -135,33 +135,34 @@
 
             if (response.ok) {
               const data = await response.json();
-              // Xử lý và hiển thị các cụm
-              const clustersHtml = Object.entries(data.clusters)
-                .map(
-                  ([clusterId, points]) =>
-                    `<li><strong>Cụm ${clusterId}:</strong> [${points.join(
-                      ", "
-                    )}]</li>`
-                )
-                .join("");
+                // Xử lý và hiển thị các cụm
+                const clustersHtml = Object.entries(data.clusters).map(
+                        ([clusterId, points]) => `<li><strong>Cụm ${clusterId}:</strong> [${points.join(', ')}]</li>`
+                    ).join('');
 
-              // Hiển thị kết quả
-              document.getElementById("Result").innerHTML = `
+                      // Xử lý hiển thị kết quả của các iteration trong final
+                    const iterationHtml = data.final.map((iterationData) => {
+                        return `
+                            <li>
+                                <strong>Vòng lặp ${iterationData.iteration}:</strong>
+                                <p><b>Kết qua phân cụm:</b> ${iterationData.labels.join(', ')}</p>
+                                <p><b>Trọng tâm:</b> ${iterationData.centroids.map(c => `[${c.join(', ')}]`).join(', ')}</p>
+                            </li>
+                        `;
+                    }).join('');
+
+                    // Hiển thị kết quả
+                    document.getElementById('Result').innerHTML = `
                         <h2>Clustering Result</h2>
-                        <p><b>Phân cụm ban đầu:</b> ${data.initial_labels.join(
-                          ", "
-                        )}</p>
-                        <p><b>Trọng tâm ban đầu:</b> ${data.initial_centroids
-                          .map((c) => `[${c.join(", ")}]`)
-                          .join(", ")}</p>
-                        <p><b>Trọng tâm cuối cùng:</b> ${data.centroids
-                          .map((c) => `[${c.join(", ")}]`)
-                          .join(", ")}</p>
-                        <p><b>Kết quả phân cụm:</b> ${data.final_labels.join(
-                          ", "
-                        )}</p>
-                        <h3>Phân cụm:</h3>
+                        <p><b>Phân cụm ban đầu:</b> ${data.initial_labels.join(', ')}</p>
+                        <p><b>Trọng tâm ban đầu:</b> ${data.initial_centroids.map(c => `[${c.join(', ')}]`).join(', ')}</p>
+                        <p><b>Trọng tâm cuối cùng:</b> ${data.centroids.map(c => `[${c.join(', ')}]`).join(', ')}</p>
+                    
+                        <h3>Kết quả phân cụm:</h3>
                         <ul>${clustersHtml}</ul>
+
+                        <h3>Chi tiết phân cụm:</h3>
+                         <ul>${iterationHtml}</ul>
                     `;
             } else {
               const error = await response.json();
