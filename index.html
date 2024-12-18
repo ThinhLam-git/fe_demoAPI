@@ -102,7 +102,7 @@
         Naive Bayes (With Laplace Smoothing)
       </button>
       <button type="button" id="showFormButton">
-        Association Rules
+        Frequent Items and Association Rules
       </button>
       <button type="button" id="roughSetButton">
         Rough Set
@@ -115,7 +115,7 @@
       <label for="minConfidence">Min Confidence:</label>
       <input type="number" id="minConfidence" name="minConfidence" step="0.01" min="0" max="1" value="0.7"><br><br>
   
-      <button id="generateRulesButton">Generate Rules</button>
+      <button id="generateRulesButton">Generate</button>
     </div>
     <div id="Result"></div>
 
@@ -598,14 +598,26 @@
             }
 
             // Xây dựng HTML để hiển thị kết quả
-            let resultHtml = "<h3>Frequent Itemsets</h3><table><tr><th>Itemset</th></tr>";
+            let resultHtml = "<h3>Frequent Itemsets</h3><table><tr><th>Itemset</th><th>Support</th></tr>";
             data.frequent_itemsets.forEach((itemset) => {
-                resultHtml += `<tr><td>${itemset.join(", ")}</td></tr>`;
+                resultHtml += `<tr><td>${itemset.itemset.join(", ")}</td><td>Support: ${itemset.support.toFixed(2)}</td></tr>`;
             });
-            resultHtml += "</table><h3>Rules</h3><ul>";
-            data.rules.forEach((rule) => {
-                resultHtml += `<li>${rule.antecedent.join(", ")} → ${rule.consequent.join(", ")} (Confidence: ${(rule.confidence * 100).toFixed(2)}%)</li>`;
+            resultHtml += "</table>";
+
+            resultHtml += "<h3>Maximal Itemsets</h3><table><tr><th>Itemset</th></tr>";
+            data.maximal_itemsets.forEach((itemset) => {
+                resultHtml += `<tr><td>${itemset.itemset.join(", ")}</td></tr>`;
             });
+            resultHtml += "</table>";
+
+            resultHtml += "<h3>Rules</h3><ul>";
+            if (data.rules && data.rules.length > 0) { // Kiểm tra nếu rules tồn tại và không rỗng
+                data.rules.forEach((rule) => {
+                    resultHtml += `<li>${rule.antecedent.join(", ")} → ${rule.consequent.join(", ")} (Confidence: ${(rule.confidence * 100).toFixed(2)}%)</li>`;
+                });
+            } else {
+                resultHtml += "<li>No rules found.</li>"; // Hiển thị thông báo nếu không có rules
+            }
             resultHtml += "</ul>";
 
             // Hiển thị kết quả
