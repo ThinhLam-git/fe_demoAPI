@@ -101,12 +101,125 @@
       <button type="button" id="naiveBayesWithSmoothButton">
         Naive Bayes (With Laplace Smoothing)
       </button>
+      <button type="button" id="showFormButton">
+        Association Rules
+      </button>
+      <button type="button" id="roughSetButton">
+        Rough Set
+      </button>
     </form>
-
+    <div id="ruleForm" style="display: none;">
+      <label for="minSupport">Min Support:</label>
+      <input type="number" id="minSupport" name="minSupport" step="0.01" min="0" max="1" value="0.5"><br><br>
+  
+      <label for="minConfidence">Min Confidence:</label>
+      <input type="number" id="minConfidence" name="minConfidence" step="0.01" min="0" max="1" value="0.7"><br><br>
+  
+      <button id="generateRulesButton">Generate Rules</button>
+    </div>
     <div id="Result"></div>
 
     <script>
+        document.getElementById("roughSetButton").addEventListener("click", async (event) => {
+  event.preventDefault();
+
+  const fileInput = document.getElementById("csvFile");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("Please upload a .csv file");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch("https://be-webdm.onrender.com/rough-set", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      const formatArray = (arr) => {
+        return arr.join(", ");
+      };
+
+      // Nếu muốn hiển thị thêm dữ liệu phân tích, có thể giữ code cũ bên dưới
+      const roughSet = data.rough_set;
+      const reductsAndRules = data.reducts_and_rules;
+
+      // Tạo HTML cho Rough Set
+      let resultHtml = `<h3>Kết quả tập thô</h3>`;
+      resultHtml += `<table border="1">
+        <tr>
+          <th>Thuộc tính</th>
+          <th>Quyết định</th>
+          <th>Xấp xĩ dưới</th>
+          <th>Xấp xĩ trên</th>
+          <th>Độ chính xác</th>
+        </tr>`;
+
+      // Lặp qua các tập dữ liệu trong Rough Set
+      for (const [attributes, details] of Object.entries(roughSet)) {
+        for (const [cls, lower] of Object.entries(details.lower_approximation)) {
+          const upper = details.upper_approximation[cls];
+          const accuracy = details.accuracy[cls];
+
+          resultHtml += `
+            <tr>
+              <td>${attributes.replace(/\[|\]/g, "")}</td> <!-- Bỏ [] -->
+              <td>${cls}</td>
+              <td>${formatArray(lower)}</td> <!-- Chuyển array thành chuỗi -->
+              <td>${formatArray(upper)}</td>
+              <td>${(accuracy * 100).toFixed(2)}%</td>
+            </tr>
+          `;
+        }
+      }
+      resultHtml += `</table>`;
+
+      // Tạo HTML cho Reducts và Rules
+      let reductsHtml = `<h3>Các rút gọn và luật sinh ra</h3>`;
+      reductsHtml += `<h4>Các rút gọn</h4><ul>`;
+      reductsAndRules.reducts.forEach((reduct) => {
+        reductsHtml += `<li>${reduct.join(", ")}</li>`;
+      });
+      reductsHtml += `</ul>`;
+
+      reductsHtml += `<h4>Các luật sinh ra</h4><ul>`;
+      for (const [reduct, rules] of Object.entries(reductsAndRules.rules)) {
+        reductsHtml += `<li><b>${reduct.replace(/\[|\]/g, "")}:</b><ul>`;
+        if (rules.length === 0) {
+          reductsHtml += `<li>No rules generated</li>`;
+        } else {
+          rules.forEach((rule) => {
+            reductsHtml += `<li>${rule}</li>`;
+          });
+        }
+        reductsHtml += `</ul></li>`;
+      }
+      reductsHtml += `</ul>`;
+
+      // Hiển thị kết quả
+      document.getElementById("Result").innerHTML = ''; 
+      document.getElementById("Result").innerHTML += resultHtml + reductsHtml;
+    } else {
+      const error = await response.json();
+      alert(`Error: ${error.error}`);
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    alert("Failed to connect to the server!");
+  }
+});
+
       // Clustering button event listener
+      document.getElementById("showFormButton").addEventListener("click", () => {
+      document.getElementById("ruleForm").style.display = "block";
+    });
       document
         .getElementById("clusteringButton")
         .addEventListener("click", async (event) => {
@@ -431,6 +544,83 @@
             console.error("Fetch error:", error);
             alert("Failed to connect to the server!");
           }
+        });
+
+        document.getElementById("generateRulesButton")
+        .addEventListener("click", async (event) => {
+        console.log("Button clicked"); // Ghi nhận sự kiện click
+        event.preventDefault(); // Ngăn trình duyệt reload trang
+        try {
+        } catch (error) {
+          console.log(error.message)
+        }
+        // Lấy các giá trị từ form
+        const fileInput = document.getElementById("csvFile");
+        const file = fileInput.files[0];
+        console.log("File selected:", file); // Ghi nhận thông tin file
+
+        const minSupport = parseFloat(document.getElementById("minSupport").value);
+        const minConfidence = parseFloat(document.getElementById("minConfidence").value);
+        console.log("Min Support:", minSupport, "Min Confidence:", minConfidence); // Ghi nhận giá trị hỗ trợ và độ tin cậy
+
+        if (!file) {
+            alert("Please upload a .csv file.");
+            console.warn("No file uploaded."); // Ghi cảnh báo nếu không có file
+            return;
+        }
+        if (isNaN(minSupport) || isNaN(minConfidence)) {
+            alert("Please enter valid values for support and confidence.");
+            console.warn("Invalid support or confidence values."); // Ghi cảnh báo nếu giá trị không hợp lệ
+            return;
+        }
+
+        // Tạo form data
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("min_support", minSupport);
+        formData.append("min_confidence", minConfidence);
+        console.log("FormData created."); // Ghi nhận dữ liệu đã được tạo
+
+        try {
+            const response = await fetch("https://be-webdm.onrender.com/association_rules", {
+                method: "POST",
+                body: formData,
+            });
+            console.log("API Response:", response); // Ghi nhận phản hồi từ API
+
+            const data = await response.json();
+            console.log("Parsed Data:", data); // Ghi nhận dữ liệu sau khi phân tích
+
+            if (!response.ok) {
+                alert(data.error);
+                console.error("API Error:", data.error); // Ghi nhận lỗi nếu có
+                return;
+            }
+
+            // Xây dựng HTML để hiển thị kết quả
+            let resultHtml = "<h3>Frequent Itemsets</h3><table><tr><th>Itemset</th></tr>";
+            data.frequent_itemsets.forEach((itemset) => {
+                resultHtml += `<tr><td>${itemset.join(", ")}</td></tr>`;
+            });
+            resultHtml += "</table><h3>Rules</h3><ul>";
+            data.rules.forEach((rule) => {
+                resultHtml += `<li>${rule.antecedent.join(", ")} → ${rule.consequent.join(", ")} (Confidence: ${(rule.confidence * 100).toFixed(2)}%)</li>`;
+            });
+            resultHtml += "</ul>";
+
+            // Hiển thị kết quả
+            document.getElementById("Result").innerHTML = resultHtml;
+            console.log("Results displayed successfully."); // Xác nhận hiển thị kết quả
+        } catch (error) {
+            alert("Failed to connect to the server.");
+            console.error("Fetch Error:", error); // Ghi nhận lỗi nếu không kết nối được
+        }
+        });
+
+        // Ngăn hành động submit mặc định trên form nếu tồn tại
+        document.getElementById("aprioriForm").addEventListener("submit", (event) => {
+            event.preventDefault();
+            console.log("Form submission prevented."); // Xác nhận hành động submit bị chặn
         });
     </script>
   </body>
