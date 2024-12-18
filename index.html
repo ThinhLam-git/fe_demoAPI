@@ -129,7 +129,6 @@
               {
                 method: "POST",
                 body: formData,
-                mode: "no-cors",
               }
             );
 
@@ -197,7 +196,6 @@
               {
                 method: "POST",
                 body: formData,
-                mode: "no-cors",
               }
             );
 
@@ -205,7 +203,9 @@
               const data = await response.json();
               document.getElementById("Result").innerHTML = `
                         <h2>Decision Tree Result</h2>
-                        <img src="${data.image_file}" alt="Decision Tree" style="max-width: 100%; height: auto;">`;
+                        <img src="${data.image_file}" alt="Decision Tree" style="max-width: 100%; height: auto;">
+                        `;
+                        
             } else {
               const error = await response.json();
               alert(`Error: ${error.error}`);
