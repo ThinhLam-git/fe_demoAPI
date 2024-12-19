@@ -107,6 +107,10 @@
       <button type="button" id="roughSetButton">
         Rough Set
       </button>
+      <form id="correlationForm">
+        
+        <button type="button" id="pearsoncorrelatiButton">Tính Tương Quan</button>
+      </form>
     </form>
     <div id="ruleForm" style="display: none;">
       <label for="minSupport">Min Support:</label>
@@ -634,6 +638,51 @@
             event.preventDefault();
             console.log("Form submission prevented."); // Xác nhận hành động submit bị chặn
         });
+      //dotuongquan
+      document
+  .getElementById("pearsoncorrelatiButton")
+  .addEventListener("click", async (event) => {
+    event.preventDefault(); // Ngăn form tự động gửi
+
+    // Lấy file từ input
+    const fileInput = document.getElementById("csvFile");
+    const file = fileInput.files[0];
+
+    if (!file) {
+      alert("Please upload a .csv file");
+      return;
+    }
+
+    // Tạo FormData để gửi file
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      // Gửi yêu cầu POST tới backend
+      const response = await fetch(
+        "http://127.0.0.1:5000/pearson_correlation",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      // Xử lý phản hồi từ backend
+      if (response.ok) {
+        const data = await response.json();
+        let resultHtml = `<h2>Pearson Correlation Result</h2>`;
+        resultHtml += `<p><b>Correlation Coefficient:</b> ${data.pearson_correlation.toFixed(4)}</p>`;
+        resultHtml += `<p><b>Interpretation:</b> ${data.interpretation}</p>`;
+        document.getElementById("Result").innerHTML = resultHtml;
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      alert("Failed to connect to the server!");
+    }
+  });
     </script>
   </body>
 </html>
