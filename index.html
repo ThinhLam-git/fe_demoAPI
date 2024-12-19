@@ -93,6 +93,9 @@
 
     <form id="uploadForm">
       <input type="file" id="csvFile" accept=".csv" required />
+      <button type="button" id="correlationButton">
+        Calculate Correlation
+      </button>
       <button type="button" id="clusteringButton">Run Clustering</button>
       <button type="button" id="decisionTreeButton">Run Decision Tree</button>
       <button type="button" id="naiveBayesNoSmoothButton">
@@ -107,10 +110,6 @@
       <button type="button" id="roughSetButton">
         Rough Set
       </button>
-      <form id="correlationForm">
-        
-        <button type="button" id="pearsoncorrelatiButton">Tính Tương Quan</button>
-      </form>
     </form>
     <div id="ruleForm" style="display: none;">
       <label for="minSupport">Min Support:</label>
@@ -219,7 +218,52 @@
     alert("Failed to connect to the server!");
   }
 });
-
+//Correlation button event listener
+        <button id="correlationButton">Calculate Correlation</button>
+        document.addEventListener("DOMContentLoaded", () => {
+          const correlationButton = document.getElementById("correlationButton");
+          if (correlationButton) {
+            correlationButton.addEventListener("click", async (event) => {
+              event.preventDefault();
+        
+              const fileInput = document.getElementById("csvFile");
+              const file = fileInput.files[0];
+        
+              if (!file) {
+                alert("Please upload a .csv file");
+                return;
+              }
+        
+              const formData = new FormData();
+              formData.append("file", file);
+        
+              try {
+                const response = await fetch("http://127.0.0.1:5000/pearson_correlation", {
+                  method: "POST",
+                  body: formData,
+                });
+        
+                if (response.ok) {
+                  const data = await response.json();
+                  document.getElementById("Result").innerHTML = `
+                    <h2>Correlation Result</h2>
+                    <p><b>Pearson Correlation:</b> ${data.pearson_correlation.toFixed(2)}</p>
+                    <p><b>Interpretation:</b> ${data.interpretation}</p>
+                  `;
+                } else {
+                  const error = await response.json();
+                  alert(`Error: ${error.error}`);
+                }
+              } catch (error) {
+                console.error("Fetch error:", error);
+                alert("Failed to connect to the server!");
+              }
+            });
+          } else {
+            console.error("Element with ID 'correlationButton' not found.");
+          }
+        });
+        
       // Clustering button event listener
       document.getElementById("showFormButton").addEventListener("click", () => {
       document.getElementById("ruleForm").style.display = "block";
