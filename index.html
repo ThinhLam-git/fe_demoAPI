@@ -676,57 +676,56 @@
             console.error("Fetch Error:", error); // Ghi nhận lỗi nếu không kết nối được
         }
         });
-
-        // Ngăn hành động submit mặc định trên form nếu tồn tại
-        document.getElementById("aprioriForm").addEventListener("submit", (event) => {
-            event.preventDefault();
-            console.log("Form submission prevented."); // Xác nhận hành động submit bị chặn
+      
+      //button event do tuong quan
+     document.addEventListener("DOMContentLoaded", () => {
+          const correlationButton = document.getElementById("correlationButton");
+          if (correlationButton) {
+            correlationButton.addEventListener("click", async (event) => {
+              event.preventDefault();
+        
+              const fileInput = document.getElementById("csvFile");
+              const file = fileInput.files[0];
+        
+              if (!file) {
+                alert("Please upload a .csv file");
+                return;
+              }
+        
+              const formData = new FormData();
+              formData.append("file", file);
+        
+              try {
+                const response = await fetch("http://127.0.0.1:5000/pearson_correlation", {
+                  method: "POST",
+                  body: formData,
+                });
+        
+                if (response.ok) {
+                  const data = await response.json();
+                  document.getElementById("Result").innerHTML = `
+                    <h2>Correlation Result</h2>
+                    <p><b>Pearson Correlation:</b> ${data.pearson_correlation.toFixed(2)}</p>
+                    <p><b>Interpretation:</b> ${data.interpretation}</p>
+                  `;
+                } else {
+                  const error = await response.json();
+                  alert(`Error: ${error.error}`);
+                }
+              } catch (error) {
+                console.error("Fetch error:", error);
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                  alert("Failed to connect to the server. Please check if the backend is running and accessible.");
+                } else {
+                  alert("An unexpected error occurred.");
+                }
+              }
+            });
+          } else {
+            console.error("Element with ID 'correlationButton' not found.");
+          }
         });
-      //dotuongquan
-      document
-  .getElementById("pearsoncorrelatiButton")
-  .addEventListener("click", async (event) => {
-    event.preventDefault(); // Ngăn form tự động gửi
-
-    // Lấy file từ input
-    const fileInput = document.getElementById("csvFile");
-    const file = fileInput.files[0];
-
-    if (!file) {
-      alert("Please upload a .csv file");
-      return;
-    }
-
-    // Tạo FormData để gửi file
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      // Gửi yêu cầu POST tới backend
-      const response = await fetch(
-        "http://127.0.0.1:5000/pearson_correlation",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      // Xử lý phản hồi từ backend
-      if (response.ok) {
-        const data = await response.json();
-        let resultHtml = `<h2>Pearson Correlation Result</h2>`;
-        resultHtml += `<p><b>Correlation Coefficient:</b> ${data.pearson_correlation.toFixed(4)}</p>`;
-        resultHtml += `<p><b>Interpretation:</b> ${data.interpretation}</p>`;
-        document.getElementById("Result").innerHTML = resultHtml;
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-      alert("Failed to connect to the server!");
-    }
-  });
+         
     </script>
   </body>
 </html>
